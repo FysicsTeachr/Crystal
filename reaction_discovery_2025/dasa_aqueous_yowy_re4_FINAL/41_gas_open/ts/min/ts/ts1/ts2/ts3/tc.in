@@ -1,0 +1,23 @@
+coordinates     path.xyz
+
+basis 6-31gs
+method wb97xd3
+
+precision mixed
+charge 0
+spinmult 1
+purify no
+maxit 200
+nstep 9999
+gpus                 1
+##new_minimizer        yes
+##min_coordinates cartesian
+##min_tolerance_e   5.0e-6
+##min_tolerance 0.9e-3
+min_image  50
+run         ts
+end
+
+#$constraint_scan
+#bond 1.56 2.76 13 17_25
+#$end

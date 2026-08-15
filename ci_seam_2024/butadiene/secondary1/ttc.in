@@ -1,0 +1,26 @@
+coordinates         tgeom.xyz
+basis               6-31g
+method              HF
+casscf                yes
+ cassinglets           5
+ threall             1.0e-17
+ convthre            1.0e-7
+ threspdp            1.0e-4
+ precision           mixed
+ charge              0
+ spinmult            1
+ closed              13
+ active              3
+ dcimaxiter          200
+ ahmaxiter           200
+ casscftrustmaxiter  10
+ casscfmaxiter       200
+ cpsacasscfmaxiter   200
+ gpus                1
+ min_coordinates    cartesian
+ min_method_ci        gp
+ min_tolerance      1.0e-4
+ cphfiter             200
+ cphftol              1e-6
+run                 energy
+end

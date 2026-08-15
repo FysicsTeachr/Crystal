@@ -1,0 +1,8 @@
+from inpcrd
+cut 529.177060
+delr 0.000000
+ps-all-pairs
+ahv-exact-srf
+timestep 0.000000
+temp 0.000000
+finish

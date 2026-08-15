@@ -1,0 +1,41 @@
+coordinates        tgeom.xyz
+#QM method
+basis           gfn2xtb
+method          gfn2xtb
+sphericalbasis  yes
+guess           hcore
+threall             1.0e-14
+convthre            1.0e-7
+threspdp            1.0e-4
+precision           mixed
+charge              0
+spinmult            1
+purify              no
+dftgrid             1
+maxit               100
+gpus                 1
+min_method          lbfgs
+##min_coordinates     hdlc
+min_max_step        0.1
+nstep               5000
+run                 minimize
+end
+$constraints
+bond     20 42
+angle    19 20 42
+dihedral 17 19 20 42
+angle    16 17 19
+angle    17 19 21
+angle    19 21 23
+angle    21 23 25
+angle    23 25 27
+dihedral 10 14 16 17
+dihedral 11 15 16 17
+dihedral 14 16 17 19
+dihedral 16 17 19 21
+dihedral 17 19 21 23
+dihedral 19 21 23 25
+dihedral 21 23 25 27
+$end
+##new_minimizer       yes
+

@@ -1,0 +1,67 @@
+
+# Generated ChemShell Script
+
+set residues [ pdb_to_res "dasa-carved_ID.pdb" names={PT1} ]
+
+energy coords=geom.pun theory=dl_poly : [ list \
+                       amber_prmtop_file= dasa-carved_ID.prmtop \
+                       scale14 = [ list [ expr 1 / 1.2 ] 0.5  ] \
+                       use_pairlist = no \
+                       save_dl_poly_files = yes \
+                       list_option=none ]
+
+set atom_charges [ list_amber_atom_charges ]
+
+source qm_tb.txt
+source active_tb.txt
+
+set charge 0
+set mult 1
+
+source orca-chemsh.tcl
+set orcasimpleinput " ! GFN2-xTB TIGHTSCF"
+set orcablocks "
+%maxcore 2000
+%scf MaxIter 500
+end
+%pal
+nprocs 1
+end
+"
+
+dl-find coords=geom.pun \
+       theory=hybrid : [ list \
+         coupling=shift \
+         debug=no \
+         atom_charges= $atom_charges \
+         qm_region= $qmatoms \
+         qm_theory=orca : [ list \
+              executable= orca \
+              charge= $charge \
+              mult= $mult \
+              orcasimpleinput= $orcasimpleinput \
+              orcablocks= $orcablocks ] \
+         mm_theory=dl_poly : [ list \
+              list_option= none \
+              debug=no \
+              mxexcl=500 \
+              exact_srf= yes \
+              use_pairlist= no \
+              cutoff= 1000 \
+              conn= geom.pun \
+              scale14= [ list [ expr 1 / 1.2 ] 0.5  ] \
+              save_dl_poly_files=yes \
+              amber_prmtop_file= dasa-carved_ID.prmtop ] ] \
+       active_atoms= $active_atoms \
+       coordinates= hdlc \
+       residues= $residues \
+       list_option=full \
+       dump=10 \
+       tolerance=0.00045 \
+       maxcycle=10000 \
+       maxstep=0.5 \
+       result=optimized.pun
+
+# Write the final structure after all 9 steps
+write_xyz file=optimized.xyz coords=optimized.pun
+#write_pun file=optimized.pun coords=optimized_9.pun

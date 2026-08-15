@@ -1,0 +1,35 @@
+coordinates        tgeom.xyz
+#QM method
+basis           gfn2xtb
+method          gfn2xtb
+sphericalbasis  yes
+guess           hcore
+threall             1.0e-14
+convthre            1.0e-7
+threspdp            1.0e-4
+precision           mixed
+charge              0
+spinmult            1
+purify              no
+dftgrid             1
+maxit               100
+gpus                 1
+min_max_step        0.1
+nstep               5000
+run                 minimize
+new_minimizer       yes
+end
+$constraint_freeze
+dihedral 14_16_17_19
+dihedral 16_17_19_21
+dihedral 17_19_21_23
+dihedral 19_21_23_25
+dihedral 21_23_25_27
+xyz 42
+xyz 1
+xyz 5
+xyz 9
+xyz 10
+xyz 11
+$end
+

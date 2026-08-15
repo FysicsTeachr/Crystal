@@ -1,0 +1,28 @@
+coordinates     gas2.xyz
+
+#QM method
+basis 6-31gs
+method wb97xd3
+##qmindices      qm.txt
+
+##threspdp 1.0e-4 ##leaving this here
+
+precision mixed
+charge 0
+spinmult 1
+purify no
+#dftgrid 1
+maxit 200
+##pcm cosmo
+##epsilon 2.38
+
+min_image       11
+##min_tolerance   1e-3
+##min_tolerance_e 1e-5
+nstep           9999
+
+gpus                 1
+##ts_method neb_frozen
+min_coordinates cartesian
+run         minimize
+end

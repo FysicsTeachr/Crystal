@@ -1,0 +1,4 @@
+identified bugs:
+ there are some NAN values in the shell file, I noticed after adding the part to add foundp first.
+ the foundp part doesnt initiate properly. At least the first foundp value didnt add to ibar
+notes:

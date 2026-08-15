@@ -1,0 +1,63 @@
+Quick start
+===========
+
+A minimal bilirubin run on two workers. Three files carry the worker count and must agree; bbb is
+a source constant, so it is set before compiling.
+
+  ./fix_paths.sh                          # set the conda environment and MOPAC-PI path
+
+  cd reaction_discovery_2025/bilirubin_pm6fom_FINAL
+
+  sed -i 's/^bbb=400/bbb=2/'     p.f90              # worker count, line 35
+  sed -i 's/^xt=400/xt=2/'       loadFoundlings.sh  # line 21
+  sed -i 's/{1\.\.399}/{1..2}/'  batch30.sh         # line 3
+
+  module load intel-oneapi
+  ifort p.f90 -o a.out
+  ( cd oldSecondary      && ifort s2.f90 -o b.out )
+  ( cd oldSecondary/test && ifort s3.f90 -o c.out && ifort convert.f90 -o convert.out )
+
+  ./regenerate_workers.sh 2               # clone oldSecondary into secondary1 and secondary2
+  sbatch saout.sh                         # driver: creates the buckets, seeds yesfolder, runs a.out
+  ./batch30.sh                            # submit the workers
+
+Progress:
+
+  cat measur.txt                          # current point, shell counter, flags
+  ls allfolder | wc -l                    # points evaluated in the current shell
+  tail -3 slurm-out                       # driver log: shell completion and the next ceiling
+
+Stop:
+
+  scancel --name=pm6fomo
+  scancel --name=pm7s
+
+DASA, aqueous
+-------------
+
+  cd reaction_discovery_2025/dasa_yowy_re5
+
+  sed -i 's/^bbb=399/bbb=2/'     p.f90              # line 36
+  sed -i 's/^xt=399/xt=2/'       loadFoundlings.sh  # line 4
+  sed -i 's/{1\.\.399}/{1..2}/'  batch30.sh         # line 3
+
+  module load intel-oneapi
+  ifort p.f90 -o a.out
+  ( cd oldSecondary && ifort 1s.f90 -o a.out && ifort s2.f90 -o b.out )
+
+  ./loadFoundlings.sh
+  sbatch saout.sh
+  ./batch30.sh
+
+This campaign additionally requires ChemShell 3.7.1 with a working MPI, ORCA and xTB; the worker
+submit.sh exports them. The bilirubin campaign requires none of these, as MOPAC-PI runs serially.
+
+Notes
+-----
+
+  - gfortran rejects p.f90 unless -fallow-argument-mismatch is given, because addTo is called with
+    an integer literal where the dummy argument is real(8). ifort compiles it as written.
+
+  - The first shell runs at the seed energy itself, so no move is accepted until the ceiling opens
+    at the second shell, where ecut = Ecut0 + incr. With the production EcutMax a two-worker
+    demonstration therefore finishes after two shells.

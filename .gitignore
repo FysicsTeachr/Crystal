@@ -1,0 +1,59 @@
+# compiled binaries (build them with: ifort p.f90 -o a.out   etc.)
+a.out
+b.out
+c.out
+convert.out
+*.o
+*.mod
+
+# SLURM / scheduler noise
+slurm-*
+sout
+serror
+*.e[0-9]*
+*.o[0-9]*
+machinefile.*
+
+# run state written by the driver and workers
+measur.txt
+status.txt
+coord.txt
+coord1.txt
+foundp.txt
+foundling*
+filesinfo2.txt
+converted.txt
+values.txt
+proceed.txt
+cancel.txt
+preShl.txt
+shelll.txt
+set002.txt
+
+# output buckets — recreated by saout.sh on every run
+allfolder/
+yesfolder/
+nofolder/
+nofoldertmp/
+newlat/
+climbinglat/
+prefolder/
+dissociated/
+failed/
+minimized/*.pun
+allslurms/*
+!allslurms/.gitkeep
+
+# QM scratch
+gradient.tmp/
+gradient*.log
+scr.*/
+*.gbw
+*.engrad
+*.molden*
+*.hess
+*.tmp
+
+# workers are generated: secondary1 is the shipped example, 2..bbb are clones
+secondary[0-9]*/
+!secondary1/

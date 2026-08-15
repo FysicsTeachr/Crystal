@@ -1,0 +1,2 @@
+obabel 180.xyz -O 180.pdb
+python parmconv.py

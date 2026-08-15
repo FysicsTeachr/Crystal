@@ -1,0 +1,4 @@
+# These scripts and inputs run on Linux HPC — keep LF endings everywhere.
+# A CRLF checkout breaks the SLURM scripts ("bash: $'\r': command not found") and the
+# Fortran/ChemShell/MOPAC input parsers.
+* text=auto eol=lf

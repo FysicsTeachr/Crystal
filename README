@@ -1,0 +1,179 @@
+Parallel on-the-fly Crystal algorithm
+=====================================
+
+Implementation of the Crystal algorithm for global exploration of molecular configuration space:
+a driver that walks a lattice of reaction coordinates under an energy ceiling, a pool of parallel
+workers that evaluate lattice points with an external quantum-chemistry program, and the
+refinement and clustering stages applied to the accepted points.
+
+Contents
+--------
+
+  reaction_discovery_2025/   Reaction discovery in DASA photoswitches and bilirubin.
+                             Pandey and Liang, J. Chem. Theory Comput. 2025, 21, 4704.
+                             doi:10.1021/acs.jctc.5c00324
+
+  ci_seam_2024/              Conical-intersection seam search for stilbene and 1,3-butadiene.
+                             Pandey, Poirier and Liang, J. Chem. Theory Comput. 2024, 20, 4778.
+                             doi:10.1021/acs.jctc.4c00292
+
+  crystal.f90                Original 2022 single-file implementation, kept for reference,
+  crystalNov16.f90           together with its submission script.
+  submit.sh
+
+The remainder of this file documents reaction_discovery_2025; ci_seam_2024 has its own README.
+QUICKSTART gives a minimal two-worker example.
+
+Requirements
+------------
+
+  Fortran         Intel Fortran (ifort). gfortran 10 or newer also works, with
+                  -ffree-line-length-none -fallow-argument-mismatch
+  Quantum chem.   MOPAC-PI (FOMO-CASCI) with geomeTRIC for bilirubin;
+                  ChemShell 3.7.1 with ORCA and xTB for aqueous DASA;
+                  TeraChem for gas-phase DASA
+  Scheduler       SLURM
+  Python          3.8 or newer, with numpy; MDTraj for the RMSD clustering pass
+
+fix_paths.sh rewrites the conda environment name and the MOPAC-PI path in the run scripts:
+
+  CONDA_ENV=myenv MOPACPI=/path/to/mopacpi.x ./fix_paths.sh
+
+Layout
+------
+
+  reaction_discovery_2025/
+    bilirubin_pm6fom_FINAL/         bilirubin, PM6-FOMO-CASCI with geomeTRIC and MOPAC-PI
+    bilirubin_minimize_stage/       minimization stage for the same system
+    dasa_yowy_re5/                  DASA aqueous QM/MM, lattice exploration
+    dasa_aqueous_yowy_re4_FINAL/    DASA aqueous QM/MM, refinement: minimization,
+                                    clustering and the NEB transition-state searches
+    dasa_yow6/                      DASA in gas phase and implicit solvent, TeraChem GFN2-xTB
+
+The two aqueous DASA directories are consecutive stages of one campaign: dasa_yowy_re5 runs the
+exploration and holds the driver, the 1.pun seed and the worker-cloning scripts;
+dasa_aqueous_yowy_re4_FINAL accumulates the accepted points and refines them, and therefore
+carries no driver of its own.
+
+Pipeline
+--------
+
+1. Build.
+
+     ifort p.f90 -o a.out                                            # driver
+     ( cd oldSecondary      && ifort s2.f90 -o b.out )               # accept or reject
+     ( cd oldSecondary/test && ifort s3.f90 -o c.out                 # per-substep gate
+                            && ifort convert.f90 -o convert.out )    # QM input generation
+
+2. Seed. 1.xyz (bilirubin, 79 atoms) or 1.pun (DASA, 1212-atom solvated snapshot). The seed
+   energy is the reference for the Ecut0 ceiling and must match the value set in p.f90.
+
+3. Generate the workers and start the run.
+
+     ./regenerate_workers.sh 400   # bilirubin: clone oldSecondary into secondary1..400
+     ./loadFoundlings.sh           # DASA: clone oldSecondary, count taken from xt
+     sbatch saout.sh               # driver: creates the buckets, seeds yesfolder, runs a.out
+     ./batch30.sh                  # submit the workers
+
+   The driver walks the lattice and hands points to the workers through flat files: measur.txt
+   is the claim token, shelll.txt the pending shell, coord.txt the claimed point, status.txt the
+   per-worker state. Each worker claims a point and builds the target geometry, writes the
+   constraint values for each relaxed-scan interval with maketera.py (TeraChem or MOPAC) or
+   makechm.py (ChemShell), relaxes it, gates each substep against emax, and takes the maximum
+   energy over the substeps as the barrier for the accept-or-reject decision. convert.f90
+   regenerates the quantum-chemistry input at each step and is where the excited-state root and
+   the MOPAC OCCUP group are written.
+
+   Output is sorted into yesfolder (accepted), nofolder, newlat, climbinglat, dissociated,
+   failed and allfolder.
+
+4. Minimization, unconstrained, from every accepted point.
+
+     sbatch min/makeSubmit.sh      # one directory per accepted point, staged from yesfolder
+     sbatch min/submissions.sh     # submit them
+
+   For DASA the equivalent is minimize/<N>/minimize.chm with minimize.sh: a ChemShell hybrid
+   optimization without constraints, tolerance 0.00045.
+
+5. Extraction and clustering.
+
+     ficOutput.py, purify.py, dissociated.py, bad_list.py, statistics.py
+         restore the canonical atom order, discard fragmented geometries, tabulate results
+
+     bilirubin cluster/: unique_1-list.py, unique_2-sort.py, unique_3-few.py reduce the
+         geometries to a unique set; h-rmsd.py performs the heavy-atom RMSD pass with MDTraj
+
+     DASA cluster/cluster.py: classifies structures by the four triene dihedrals (|d| < 90
+         taken as cis) together with bond connectivity at a 1.6 A cutoff
+
+6. Refinement (DASA). One directory per pair of minima (1_1067, 29-51, 32-41, 60-41, 70-41s,
+   1366_1433, 41-41ht_dft), each with a TeraChem QM/MM nudged-elastic-band input ttc.in at
+   wB97X-D3/6-31G* with the outer solvent frozen, plus replace_coord.py, parmconv.py and
+   align_interpolated.py. geodesic/ holds the interpolated initial guesses, and
+   41_gas_open/tc.in is the gas-phase reoptimization after the water is removed.
+
+Worker generation
+-----------------
+
+Workers are clones of oldSecondary. In the bilirubin campaign each worker also carries an index
+in its claim routine, so that worker i ignores lattice points below index i rather than all
+workers contending for the same early points:
+
+  secondary<i>/s1.py    if current == 0 or current < <i>:     for i = 1 .. bbb-1
+                        if current == 0:                      for i = bbb
+
+regenerate_workers.sh performs the clone and applies that edit; loadFoundlings.sh, which is the
+original script, performs the clone only. The DASA workers are plain clones and need no index,
+and each campaign's loadFoundlings.sh already carries the correct worker count, which must agree
+with bbb in p.f90 and with the loop range in batch30.sh.
+
+Run inputs
+----------
+
+Seed geometries 1.xyz, 1.pun and geom.xyz; MOPAC-PI templates gradient.dat; AMBER topology
+dasa-carved_ID.prmtop and .pdb; DL_POLY CONFIG, FIELD and CONTROL; quantum and active region
+definitions qm_tb.txt and active_tb.txt; the explicit degree-of-freedom list dl.in; per-interval
+constraints constraints_1.txt to constraints_3.txt; the ChemShell driver move.chm; and the
+neighbour move vectors radiux.txt.
+
+Notes
+-----
+
+  - gradient.dat must end with an OCCUP group whose number of values equals the active-space
+    orbital count; for OPEN(4,4) that is "2.0 2.0 0.0 0.0". A mismatch aborts in MOPAC-PI with a
+    state.F90 end-of-file error.
+
+  - MOPAC keyword lines must not exceed 80 columns and are continued with "+". Longer lines are
+    silently truncated.
+
+  - The published bilirubin results used geomeTRIC with the dihedral-constraint tolerance in
+    internal.py relaxed from 1e-6 to 1e-4.
+
+  - The worker watchdogs copy the input geometry into allfolder when they terminate a stalled
+    job, so allslurms should be cross-checked against allfolder when reanalyzing a run.
+
+Repository contents
+-------------------
+
+Directories that the scripts generate in large numbers - the worker directories and the
+per-point minimization directories - are represented here by a single instance under its
+original name, and are regenerated by regenerate_workers.sh, loadFoundlings.sh and
+min/makeSubmit.sh. Results, scratch files and compiled binaries are not included.
+COLLECTION_STATS.txt lists the selection in full.
+
+License
+-------
+
+MIT, see LICENSE. ChemShell, ORCA, TeraChem, MOPAC-PI, geomeTRIC and DL_POLY are external
+dependencies with their own licences and are not redistributed here.
+
+Citation
+--------
+
+  Pandey, A.; Liang, R. Development of Parallel On-the-Fly Crystal Algorithm for Reaction
+  Discovery in Large and Complex Molecular Systems. J. Chem. Theory Comput. 2025, 21, 4704.
+  doi:10.1021/acs.jctc.5c00324
+
+  Pandey, A.; Poirier, B.; Liang, R. Development of Parallel On-the-Fly Crystal Algorithm for
+  Global Exploration of Conical Intersection Seam Space. J. Chem. Theory Comput. 2024, 20, 4778.
+  doi:10.1021/acs.jctc.4c00292

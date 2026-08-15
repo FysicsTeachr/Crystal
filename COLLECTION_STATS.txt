@@ -1,0 +1,31 @@
+# Selection log for the original collection sweep. It describes the full archive, including
+# the earlier DASA restarts (yowy_re/re2/re3/9int) and min_dasa3, which are NOT published here --
+# only the final version of each campaign is. See README.
+
+# Crystal apparatus collection — file selection log
+
+collapsed        41154
+drop_big         1
+drop_data        204742
+drop_name        29444
+kept             4352
+seed_geom        4167
+
+# machine-generated clone directories: kept ONE, under its real name
+COLLAPSED  bilirubin_pm6fom_FINAL/min                                 1 kept of 6448 dirs (1..6448)
+COLLAPSED  bilirubin_minimize_stage/minimize/folders                  1 kept of 1923 dirs (1..1924)
+COLLAPSED  dasa_aqueous_yowy_re4_FINAL/minimize                       1 kept of 491 dirs (1..14686)
+COLLAPSED  bilirubin_pm6fom_FINAL                                     secondary1 kept of 400 dirs (secondary1..secondary400)
+COLLAPSED  dasa_aqueous_yowy_re4_FINAL/cluster/min                    1 kept of 77 dirs (1..14684)
+COLLAPSED  dasa_yow6                                                  secondary1 kept of 30 dirs (secondary1..secondary30)
+COLLAPSED  dasa_min_dasa3                                             secondary1 kept of 30 dirs (secondary1..secondary30)
+KEPT ALL   dasa_aqueous_yowy_re4_FINAL/32-41/ts/ts2/ts3               2 dirs (min1, min2)
+KEPT ALL   dasa_aqueous_yowy_re4_FINAL/41-41ht_dft/restart            2 dirs (minimize1, minimize2)
+KEPT ALL   dasa_aqueous_yowy_re4_FINAL/29-51/ts/ts2/ts3               2 dirs (min1, min2)
+KEPT ALL   dasa_aqueous_yowy_re4_FINAL/29-51/neb                      2 dirs (minimize2, minimize14)
+KEPT ALL   dasa_aqueous_yowy_re4_FINAL/58-60s/neb                     2 dirs (minimize2, minimize14)
+KEPT ALL   dasa_aqueous_yowy_re4_FINAL/41_gas_open                    2 dirs (min1, min2)
+KEPT ALL   dasa_aqueous_yowy_re4_FINAL/70-41s/ts/ts2/ts3/ts4/ts5/ts6/ts7 1 dirs (min2)
+KEPT ALL   dasa_aqueous_yowy_re4_FINAL/41-41ht_dft/gas                1 dirs (2)
+KEPT ALL   bilirubin_pm6fom_FINAL/cluster                             1 dirs (2)
+KEPT ALL   bilirubin_pm6fom_FINAL/min/1                               1 dirs (1)

@@ -1,0 +1,86 @@
+Crystal algorithm for conical-intersection seam space
+====================================================
+
+Pandey, A.; Poirier, B.; Liang, R. Development of Parallel On-the-Fly Crystal Algorithm for Global
+Exploration of Conical Intersection Seam Space. J. Chem. Theory Comput. 2024, 20 (11), 4778-4789.
+doi:10.1021/acs.jctc.4c00292
+
+This directory holds the stilbene and 1,3-butadiene seam searches.
+
+Differences from the reaction-discovery algorithm
+-------------------------------------------------
+
+The driver and worker machinery are those of ../reaction_discovery_2025, with two changes:
+
+  1. Two cutoffs. A lattice point is accepted only if the gap between the two intersecting states
+     is below the seam cutoff seamCut, and the average of the two state energies is below the
+     energy cutoff that is raised shell by shell. seamCut is present but unused in the
+     reaction-discovery drivers.
+
+  2. Refinement optimizes minimum-energy conical intersections rather than minima, using DL-FIND
+     through TeraChem (run conical) with the Lagrange-Newton algorithm and a degeneracy threshold
+     of 1e-4 Ha.
+
+The rejected-point list also stores the gap and the average energy of each rejected point, so that
+raising the cutoff promotes points without repeating the quantum-chemistry step; intersection
+optimizations are started only from newly accepted lattice points; and fragmented structures are
+removed by distance criteria.
+
+Systems
+-------
+
+  stilbene/     d = 12, seamCut = 0.013, Ecut0 = -540.9, energy-cutoff increment 0.005.
+                SA-2-CASSCF(2e,2o)/6-31G* through TeraChem. Contents: the driver p.f90 with its
+                two immediate predecessors oldP.f90 and savep.f90; the worker template
+                OldSecondary/ (s.f90, submit.sh, sbatch.sh, tc.in, ttc.in, ttc2.in); one generated
+                worker secondaryi/; loadFoundlings.sh, saout.sh, submissions.sh, eSubmissions.sh;
+                radiux.txt; and the run's own readme.
+
+  butadiene/    d = 24, seamCut = 0.0165, Ecut0 = -154.706, increment 0.004, on a full Cartesian
+                lattice at 1 A spacing. SA-3-CASSCF(4e,3o)/6-31G* through TeraChem. Contents: the
+                driver p.f90, the worker directory secondary1/ (s1.f90 and s2.f90, submit.sh,
+                ttc.in), the submission scripts, and example/, a self-contained copy of the run
+                directory.
+
+In these runs the worker constructs Cartesian coordinates analytically from the lattice
+coordinates, so the reference geometry is contained in the worker source and no separate seed
+geometry file is used.
+
+Build
+-----
+
+Intel Fortran (ifort). gfortran 10 or newer also works with
+-ffree-line-length-none -fallow-argument-mismatch.
+
+  module load intel-oneapi
+
+  cd stilbene
+  ifort p.f90 -o a.out
+  ( cd OldSecondary && ifort s.f90 -o a.out )
+
+  cd ../butadiene
+  ifort p.f90 -o a.out
+  ( cd secondary1 && ifort s1.f90 -o a.out && ifort s2.f90 -o b.out )
+
+Running
+-------
+
+Both systems call TeraChem: stilbene through tc.in and ttc.in, butadiene through ttc.in with
+casscf yes, closed 13, active 3. The worker submit.sh runs the driver, then TeraChem, then the
+accept-or-reject step. Set $TeraChem to a TeraChem installation before submitting.
+
+Reference values from the paper
+-------------------------------
+
+  system         method                          d.o.f.   seam cutoff   accepted / rejected
+  PST-1          FOMO-hh-TDA-DFT, B3LYP/6-31G*      8       0.015 au      2,818 / 29,165
+  stilbene       SA-2-CASSCF(2e,2o)/6-31G*         12       0.013 au      5,200 / 63,390
+  1,3-butadiene  SA-3-CASSCF(4e,3o)/6-31G*         24       0.0165 au     177,331 / 637,058
+                                                                          16,991 / 628,701
+
+Intersections are clustered hierarchically with average linkage on pairwise RMSD at a 0.5 A
+cutoff, followed by an energy criterion of 0.015 au within each cluster, which separates
+structures that are geometrically similar but energetically distinct. Structures are required to
+be intact: every carbon pair connected through C-C bonds shorter than 3 A, and every hydrogen
+bound to a carbon within 2.1 A. Intersection sets are compared on a plane of energy against the
+largest eigenvalue of the Pietrucci-Andreoni contact matrix with n = 6 and m = 10.

@@ -1,0 +1,63 @@
+
+# Generated ChemShell Script
+
+set residues [ pdb_to_res "dasa-carved_ID.pdb" names={PT1} ]
+
+#energy coords=pregeom.pun theory=dl_poly : [ list \
+#                       amber_prmtop_file= dasa-carved_ID.prmtop \
+#                       scale14 = [ list [ expr 1 / 1.2 ] 0.5  ] \
+#                       use_pairlist = no \
+#                       save_dl_poly_files = yes \
+#                       list_option=none ]
+
+#set atom_charges [ list_amber_atom_charges ]
+
+
+set charge 0
+set mult 1
+source orca-chemsh.tcl
+set orcasimpleinput " ! GFN2-xTB TIGHTSCF"
+set orcablocks "
+%maxcore 2000
+%scf MaxIter 500
+end
+%pal
+nprocs 1
+end
+"
+
+# Step 1: Applying 1/1th of the total dihedral change
+
+dl-find coords=solute.pun active_atoms= [ list 14 16 17 19 ] \
+    theory=restraint : [ list \
+    restraints= [ list \
+        [ list torsion 14 16 17 19 100.82 1.0 ] \
+        [ list torsion 16 17 19 21 -139.96 1.0 ] \
+        [ list torsion 17 19 21 23 7.07 1.0 ] \
+        [ list torsion 19 21 23 25 -1.75 1.0 ] \
+        [ list torsion 21 23 25 27 -136.16 1.0 ] ] ] \
+    result=adjusted_1.pun
+
+dl-find coords=adjusted_1.pun \
+       theory=orca : [ list \
+              executable= orca \
+              charge= $charge \
+              mult= $mult \
+              orcasimpleinput= $orcasimpleinput \
+              orcablocks= $orcablocks ] \
+#       residues=$residues \
+       coordinates= hdlc \
+       list_option=full \
+       dump=10 \
+       maxcycle=10000 \
+       maxstep=0.5 \
+       constraints= { { torsion 14 16 17 19 } \
+                      { torsion 16 17 19 21 } \
+                      { torsion 17 19 21 23 } \
+                      { torsion 19 21 23 25 } \
+                      { torsion 21 23 25 27 } } \
+       result=optimized_1.pun
+
+# Write the final structure after all 1 steps
+#write_xyz file=final_structure.xyz coords=optimized_1.pun
+#write_pun file=optimized.pun coords=optimized_1.pun

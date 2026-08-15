@@ -1,0 +1,8 @@
+
+$set
+dihedral 50 47 35 11 58.10
+dihedral 11 32 30 24 -170.37
+dihedral 32 30 24 9 -173.50
+dihedral 35 47 50 13 -125.34
+dihedral 13 53 65 67 -104.24
+dihedral 53 65 67 15 68.49

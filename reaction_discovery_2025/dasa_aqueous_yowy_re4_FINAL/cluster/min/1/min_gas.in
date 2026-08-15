@@ -1,0 +1,15 @@
+coordinates     gas.xyz
+
+basis 6-31gs
+method wb97xd3
+
+precision mixed
+charge 0
+spinmult 1
+purify no
+maxit 200
+nstep 9999
+gpus                 1
+min_coordinates cartesian
+run         minimize
+end

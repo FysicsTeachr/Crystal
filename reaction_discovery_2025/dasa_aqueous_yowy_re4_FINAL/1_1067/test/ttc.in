@@ -1,0 +1,20 @@
+prmtop       dasa-carved_ID.prmtop
+coordinates  neb1.rst7
+
+#QM method
+basis 6-31gs
+method wb97xd3
+qmindices      qm.txt
+
+
+precision mixed
+charge 0
+spinmult 1
+purify no
+maxit 200
+
+
+gpus                 1
+run         energy 
+end
+

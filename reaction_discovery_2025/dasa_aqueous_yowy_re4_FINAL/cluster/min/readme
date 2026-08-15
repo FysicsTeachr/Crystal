@@ -1,0 +1,2 @@
+obabel optimized.xyz -O optimized.pdb
+python parmconv.py
